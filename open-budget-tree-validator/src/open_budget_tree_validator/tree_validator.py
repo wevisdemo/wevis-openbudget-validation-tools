@@ -3,7 +3,9 @@ import pandas as pd
 import numpy as np
 
 def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
-    
+    """_summary_
+    Valdiate amount in a given chunk of the budget tree recursively.
+    """
     # Check _depth to break recursive loop
     if len(chunk_df['_depth'].unique()) == 1:
         return chunk_df
@@ -54,7 +56,9 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
 def validate_and_add_error_message(
     df: pd.DataFrame
 ) -> pd.DataFrame:
-    
+    """_summary_
+    Validate and add error message in budget tree.
+    """
     budget_tree_df = df.copy()
     
     # Validate Amount
