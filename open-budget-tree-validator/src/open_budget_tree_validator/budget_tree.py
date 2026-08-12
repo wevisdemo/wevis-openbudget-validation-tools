@@ -16,17 +16,19 @@ class BudgetTree():
         """_summary_
         Get a full budget tree as pandas dataframe
         """
-        return self.budget_tree
+        
+        columns_to_drop = [col for col in self.budget_tree.columns if col.startswith("_")]
+        
+        return self.budget_tree.drop(
+            columns=columns_to_drop,
+            axis=1
+        )
     
     def get_validate_tree(self) -> pd.DataFrame:
         """_summary_
         Validate tree and add error explanation to `error_message` column
         """
-        validated_tree_df = validate_and_add_error_message(self.budget_tree)
+        self.budget_tree = validate_and_add_error_message(self.budget_tree)
         
-        cleaned_tree_df = validated_tree_df.drop(
-            columns=['_text', '_depth'],
-            axis=1
-        )
-        return cleaned_tree_df
+        return self.get_budget_tree()
         
