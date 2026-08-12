@@ -1,21 +1,17 @@
 import re
 import pandas as pd
 from .tree_validator import validate_and_add_error_message
-from .utilities import add_depth_and_text
+from .utilities import clean_budget_tree, add_depth_and_text
 
 class BudgetTree():
     def __init__(self, budget_tree_df: pd.DataFrame):
         
-        # Add _text and _depth
-        self.budget_tree = add_depth_and_text(budget_tree_df.fillna(''))
+        # Clean budget tree
+        self.budget_tree = clean_budget_tree(budget_tree_df)
         
-        # Clean & Normalize amount to be int
-        self.budget_tree.loc[:, ['amount']] = self.budget_tree['amount'].apply(
-            lambda amount: re.sub(r"\,|\_", "", str(amount)).strip()
-        )
-        self.budget_tree['amount'] = self.budget_tree['amount'].astype(int)
+        # Add _depth and _text
+        self.budget_tree = add_depth_and_text(self.budget_tree)
         
-    
     def get_budget_tree(self) -> pd.DataFrame:
         """_summary_
         Get a full budget tree as pandas dataframe
