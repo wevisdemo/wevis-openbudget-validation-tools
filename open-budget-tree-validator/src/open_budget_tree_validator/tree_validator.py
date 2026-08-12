@@ -39,7 +39,9 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
             error_message += f"มีมากกว่าอยู่ {children_sum-current_amount:,}"
         else:
             error_message += f"มีน้อยกว่าอยู่ {current_amount-children_sum:,}"
-        first_row.loc[:, ['error_message']] = error_message
+        first_row.loc[:, ['error_message']] = first_row['error_message'].apply(
+            lambda old_message: " ".join([old_message, error_message])
+        )
     
     return pd.concat(
         [
