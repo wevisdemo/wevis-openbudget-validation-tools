@@ -52,7 +52,43 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
         ],
         ignore_index=True
     )
+    
+def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
+    # Split data into `BUDGETARY_UNIT` chunks
+    chunk_ids = (df['budget_type'] == 'BUDGETARY_UNIT').cumsum()
+    processed_chunks = []
+    for _id, chunk in df.groupby(chunk_ids):
+        if _id == 0: # skip MINISTRY row
+            processed_chunks.append(chunk)
+            continue
+        
+        # Check `BUDGET_PLAN` after `BUDGETARY_UNIT`
+        mask = (df['budget_type'] == 'BUDGETARY_UNIT') & (df['budget_type'].shift(-1) != 'BUDGET_PLAN')
+        chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "แผนงาน" ใต้ "หน่วยรับงบ"' 
+        )
+        
+        # Check `OUTPUT` or `PROJECT` after `BUDGET_PLAN`
+        mask = (df['budget_type'] == 'BUDGET_PLAN') & \
+            ((df['budget_type'].shift(-1) != 'OUTPUT') & (df['budget_type'].shift(-1) != 'PROJECT')) & \
+            ~(df['_text'].str.contains(r"^7\.1", regex=True))
+        chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "โครงการ" หรือ "ผลผลิต" ใต้ "แผนงาน"'
+        )
+        
+        # Check `BUDGET_DETAIL` after `PROJECT` or `OUTPUT``
+        mask = ((df['budget_type'] == 'OUTPUT') | (df['budget_type'] == 'PROJECT')) & \
+            (df['budget_type'].shift(-1) != 'BUDGET_DETAIL')
+        chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "รายละเอียดงบประมาณ" ใต้ โครงการหรือผลผลิต'
+        )
 
+        processed_chunks.append(chunk)
+
+    return pd.concat(
+        processed_chunks, ignore_index=True
+    )
+    
 def validate_and_add_error_message(
     df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -65,6 +101,6 @@ def validate_and_add_error_message(
     validated_amount_df = validate_amount_in_chunk(budget_tree_df)
     
     # Validate Hierarchy
-    # TODO: Implement hierarchy validation
+    validated_hierarchy_df = validate_budget_hierarchy(validated_amount_df)
     
-    return validated_amount_df
+    return validated_hierarchy_df
