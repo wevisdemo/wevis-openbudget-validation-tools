@@ -1,5 +1,5 @@
 error_message,budget_type,name_1,name_2,name_3,name_4,name_5,name_6,name_7,name_8,name_9,name_10,name_11,amount,document,page,fiscal_year,fiscal_year_end
-,MINISTRY,กระทวงเวทย์มนต์,,,,,,,,,,,10000000,pdfs/doc_1.pdf,1,,
+,MINISTRY,กระทวงเวทย์มนต์,,,,,,,,,,,10000000,,1,,
 ,BUDGETARY_UNIT,,สำนักงานปลัดกระทรวงเวทย์มนต์,,,,,,,,,,4000000,pdfs/doc_1.pdf,2,,
 ,BUDGET_PLAN,,,7.1 แผนงานบุคากรภาครัฐ,,,,,,,,,3000000,pdfs/doc_1.pdf,5,,
 ,BUDGET_DETAIL,,,,1. งบบุคลากร,,,,,,,,2000000,pdfs/doc_1.pdf,6,,
