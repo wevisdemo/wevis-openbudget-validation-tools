@@ -89,7 +89,26 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
             lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "รายละเอียดงบประมาณ" ใต้ โครงการหรือผลผลิต'
         )
-
+        
+        # Validate hierarchy level
+        # Validate BUDGET_PLAN
+        budgetary_unit_depth = chunk.head(1)['_depth'].values[0]
+        mask = (chunk['_depth'] == budgetary_unit_depth + 1) & \
+            (chunk['budget_type'] != 'BUDGET_PLAN')
+        chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
+            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น BUDGET_PLAN' 
+        )
+        # Validate OUTPUT and PROJECT
+        plan_indexes = sorted(set(chunk[chunk['budget_type'] == 'BUDGET_PLAN'].index))
+        min_index = plan_indexes[1] if len(plan_indexes) > 1 else 1000000
+        budgetary_plan_depth = chunk.head(1)['_depth'].values[0] + 1
+        mask = (chunk.index > min_index) & \
+            (chunk['_depth'] == budgetary_plan_depth + 1) & \
+            (chunk['budget_type'] != 'OUTPUT') & (chunk['budget_type'] != 'PROJECT')
+        chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
+            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น OUTPUT หรือ PROJECT' 
+        )
+        
         processed_chunks.append(chunk)
 
     return pd.concat(
