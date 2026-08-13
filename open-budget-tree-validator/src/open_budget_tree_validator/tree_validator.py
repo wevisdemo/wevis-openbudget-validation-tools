@@ -134,6 +134,12 @@ def validate_infomations(df: pd.DataFrame) -> pd.DataFrame:
         lambda old_err_mesg: old_err_mesg + 'ขาดชื่อเอกสาร (`document`).' 
     )
     
+    # Validate name_X columns
+    mask = (df['_text'] == '<MISSING>')
+    df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
+        lambda old_err_mesg: old_err_mesg + 'ขาดคอลลัมน์ที่มีชื่อขึ้นต้นด้วย `name_`.' 
+    )
+    
     return df
     
 def validate_and_add_error_message(
