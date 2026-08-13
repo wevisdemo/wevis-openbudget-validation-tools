@@ -32,9 +32,9 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
         return chunk_df
     
     # Get amount from next depth
-    children_sum = validated_chunks[
-        validated_chunks['_depth'] == current_depth + 1
-    ]['amount'].sum()
+    children_sum = validated_chunks.loc[
+        validated_chunks['_depth'] == current_depth + 1, ['amount']
+    ].clip(lower=0)['amount'].sum()
     
     if children_sum != current_amount:
         # Construct error message
