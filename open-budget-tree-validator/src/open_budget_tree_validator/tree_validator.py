@@ -39,11 +39,11 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
     if children_sum != current_amount:
         # Construct error message
         error_message = f"ยอดรวมรายการย่อยใต้รายการนี้ ({children_sum:,})"
-        error_message += f"ไม่ตรงกับงบของรายการนี้ ({current_amount:,}). "
+        error_message += f"ไม่ตรงกับงบของรายการนี้ ({current_amount:,}) "
         if children_sum > current_amount:
-            error_message += f"มีมากกว่าอยู่ {children_sum-current_amount:,}"
+            error_message += f"มีมากกว่าอยู่ {children_sum-current_amount:,}. "
         else:
-            error_message += f"มีน้อยกว่าอยู่ {current_amount-children_sum:,}"
+            error_message += f"มีน้อยกว่าอยู่ {current_amount-children_sum:,}. "
         first_row.loc[:, ['error_message']] = first_row['error_message'].apply(
             lambda old_message: " ".join([old_message, error_message])
         )
@@ -72,7 +72,7 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
         # Check `BUDGET_PLAN` after `BUDGETARY_UNIT`
         mask = (chunk['budget_type'] == 'BUDGETARY_UNIT') & (chunk['budget_type'].shift(-1) != 'BUDGET_PLAN')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
-            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "แผนงาน" ใต้ "หน่วยรับงบ"' 
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "แผนงาน" ใต้ "หน่วยรับงบ". ' 
         )
         
         # Check `OUTPUT` or `PROJECT` after `BUDGET_PLAN`
@@ -80,14 +80,14 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
             ((chunk['budget_type'].shift(-1) != 'OUTPUT') & (chunk['budget_type'].shift(-1) != 'PROJECT')) & \
             ~(chunk['_text'].str.contains(r"^7\.1", regex=True)) # skip 7.1 since it not caintain any OUTPUT nor PROJECT
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
-            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "โครงการ" หรือ "ผลผลิต" ใต้ "แผนงาน"'
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "โครงการ" หรือ "ผลผลิต" ใต้ "แผนงาน". '
         )
         
         # Check `BUDGET_DETAIL` after `PROJECT` or `OUTPUT``
         mask = ((chunk['budget_type'] == 'OUTPUT') | (chunk['budget_type'] == 'PROJECT')) & \
             (chunk['budget_type'].shift(-1) != 'BUDGET_DETAIL')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
-            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "รายละเอียดงบประมาณ" ใต้ โครงการหรือผลผลิต'
+            lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "รายละเอียดงบประมาณ" ใต้ โครงการหรือผลผลิต. '
         )
         
         # Validate hierarchy level
@@ -96,7 +96,7 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
         mask = (chunk['_depth'] == budgetary_unit_depth + 1) & \
             (chunk['budget_type'] != 'BUDGET_PLAN')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
-            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น BUDGET_PLAN' 
+            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น BUDGET_PLAN. ' 
         )
         # Validate OUTPUT and PROJECT
         plan_indexes = sorted(set(chunk[chunk['budget_type'] == 'BUDGET_PLAN'].index))
@@ -106,7 +106,7 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
             (chunk['_depth'] == budgetary_plan_depth + 1) & \
             (chunk['budget_type'] != 'OUTPUT') & (chunk['budget_type'] != 'PROJECT')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
-            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น OUTPUT หรือ PROJECT' 
+            lambda old_err_mesg: old_err_mesg + 'category level ควรเป็น OUTPUT หรือ PROJECT. ' 
         )
         
         processed_chunks.append(chunk)
@@ -119,31 +119,31 @@ def validate_infomations(df: pd.DataFrame) -> pd.DataFrame:
     # Validate budget_type
     mask = (df['budget_type'] == '')
     df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
-        lambda old_err_mesg: old_err_mesg + 'ขาดประเภท (`budget_type`).' 
+        lambda old_err_mesg: old_err_mesg + 'ขาดประเภท (`budget_type`). ' 
     )
     
     # Validate page
     mask = (df['page'] == '')
     df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
-        lambda old_err_mesg: old_err_mesg + 'ขาดหมายเลขหน้า (`page`).' 
+        lambda old_err_mesg: old_err_mesg + 'ขาดหมายเลขหน้า (`page`). ' 
     )
         
     # Validate document
     mask = (df['document'] == '')
     df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
-        lambda old_err_mesg: old_err_mesg + 'ขาดชื่อเอกสาร (`document`).' 
+        lambda old_err_mesg: old_err_mesg + 'ขาดชื่อเอกสาร (`document`). ' 
     )
     
     # Validate name_X columns
     mask = (df['_text'] == '<MISSING>')
     df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
-        lambda old_err_mesg: old_err_mesg + 'ขาดคอลลัมน์ที่มีชื่อขึ้นต้นด้วย `name_`.' 
+        lambda old_err_mesg: old_err_mesg + 'ขาดคอลลัมน์ที่มีชื่อขึ้นต้นด้วย `name_`. ' 
     )
     
     # Validate missing amount
     mask = (df['amount'] == -1)
     df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
-        lambda old_err_mesg: old_err_mesg + '"amount" ไม่ใช่ตัวเลข.' 
+        lambda old_err_mesg: old_err_mesg + '"amount" ไม่ใช่ตัวเลข. ' 
     )
     
     return df
