@@ -19,14 +19,17 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
     
     # Split next depth into chunks
     chunk_ids = (chunk_df['_depth'] == current_depth + 1).cumsum()
-    # Validate each chunk
-    validated_chunks = pd.concat(
-        [
-            validate_amount_in_chunk(_chunk)
-            for _id, _chunk in chunk_df.groupby(chunk_ids) if _id > 0
-        ],
-        ignore_index=True
-    )
+    if len(set(chunk_ids)) > 1:
+        # Validate each chunk
+        validated_chunks = pd.concat(
+            [
+                validate_amount_in_chunk(_chunk)
+                for _id, _chunk in chunk_df.groupby(chunk_ids) if _id > 0
+            ],
+            ignore_index=True
+        )
+    else:
+        return chunk_df
     
     # Get amount from next depth
     children_sum = validated_chunks[
