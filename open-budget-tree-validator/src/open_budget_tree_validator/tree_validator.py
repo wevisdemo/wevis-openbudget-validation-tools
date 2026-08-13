@@ -115,6 +115,27 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
         processed_chunks, ignore_index=True
     )
     
+def validate_infomations(df: pd.DataFrame) -> pd.DataFrame:
+    # Validate budget_type
+    mask = (df['budget_type'] == '')
+    df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
+        lambda old_err_mesg: old_err_mesg + 'ขาดประเภท (`budget_type`).' 
+    )
+    
+    # Validate page
+    mask = (df['page'] == '')
+    df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
+        lambda old_err_mesg: old_err_mesg + 'ขาดหมายเลขหน้า (`page`).' 
+    )
+        
+    # Validate document
+    mask = (df['document'] == '')
+    df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
+        lambda old_err_mesg: old_err_mesg + 'ขาดชื่อเอกสาร (`document`).' 
+    )
+    
+    return df
+    
 def validate_and_add_error_message(
     df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -123,8 +144,11 @@ def validate_and_add_error_message(
     """
     budget_tree_df = df.copy()
     
+    # Validate Infomation
+    validated_info_df = validate_infomations(budget_tree_df)
+    
     # Validate Amount
-    validated_amount_df = validate_amount_in_chunk(budget_tree_df)
+    validated_amount_df = validate_amount_in_chunk(validated_info_df)
     
     # Validate Hierarchy
     validated_hierarchy_df = validate_budget_hierarchy(validated_amount_df)
