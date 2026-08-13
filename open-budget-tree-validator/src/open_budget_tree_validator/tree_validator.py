@@ -67,22 +67,22 @@ def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
             continue
         
         # Check `BUDGET_PLAN` after `BUDGETARY_UNIT`
-        mask = (df['budget_type'] == 'BUDGETARY_UNIT') & (df['budget_type'].shift(-1) != 'BUDGET_PLAN')
+        mask = (chunk['budget_type'] == 'BUDGETARY_UNIT') & (chunk['budget_type'].shift(-1) != 'BUDGET_PLAN')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
             lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "แผนงาน" ใต้ "หน่วยรับงบ"' 
         )
         
         # Check `OUTPUT` or `PROJECT` after `BUDGET_PLAN`
-        mask = (df['budget_type'] == 'BUDGET_PLAN') & \
-            ((df['budget_type'].shift(-1) != 'OUTPUT') & (df['budget_type'].shift(-1) != 'PROJECT')) & \
-            ~(df['_text'].str.contains(r"^7\.1", regex=True)) # skip 7.1 since it not caintain any OUTPUT nor PROJECT
+        mask = (chunk['budget_type'] == 'BUDGET_PLAN') & \
+            ((chunk['budget_type'].shift(-1) != 'OUTPUT') & (chunk['budget_type'].shift(-1) != 'PROJECT')) & \
+            ~(chunk['_text'].str.contains(r"^7\.1", regex=True)) # skip 7.1 since it not caintain any OUTPUT nor PROJECT
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
             lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "โครงการ" หรือ "ผลผลิต" ใต้ "แผนงาน"'
         )
         
         # Check `BUDGET_DETAIL` after `PROJECT` or `OUTPUT``
-        mask = ((df['budget_type'] == 'OUTPUT') | (df['budget_type'] == 'PROJECT')) & \
-            (df['budget_type'].shift(-1) != 'BUDGET_DETAIL')
+        mask = ((chunk['budget_type'] == 'OUTPUT') | (chunk['budget_type'] == 'PROJECT')) & \
+            (chunk['budget_type'].shift(-1) != 'BUDGET_DETAIL')
         chunk.loc[mask, ['error_message']] = chunk.loc[mask, ['error_message']].apply(
             lambda old_err_mesg: old_err_mesg + 'ไม่เจอ "รายละเอียดงบประมาณ" ใต้ โครงการหรือผลผลิต'
         )
