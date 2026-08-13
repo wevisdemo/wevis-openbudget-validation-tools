@@ -54,6 +54,10 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
     )
     
 def validate_budget_hierarchy(df: pd.DataFrame) -> pd.DataFrame:
+    """_summary_
+    Valdiate budget_type in budget tree hierarchy and add error message.
+    """
+    
     # Split data into `BUDGETARY_UNIT` chunks
     chunk_ids = (df['budget_type'] == 'BUDGETARY_UNIT').cumsum()
     processed_chunks = []
