@@ -6,7 +6,7 @@ def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
     
     # Clean & Normalize amount to be int
     cleaned_budget_df.loc[:, ['amount']] = cleaned_budget_df['amount'].apply(
-        lambda amount: re.sub(r"\,|\_", "", str(amount)).strip() if amount else '0'
+        lambda amount: re.sub(r"\,|\_", "", str(amount)).strip() if amount else '-1'
     )
     cleaned_budget_df['amount'] = cleaned_budget_df['amount'].astype(int)
     

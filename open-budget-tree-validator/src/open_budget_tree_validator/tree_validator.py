@@ -140,6 +140,12 @@ def validate_infomations(df: pd.DataFrame) -> pd.DataFrame:
         lambda old_err_mesg: old_err_mesg + 'ขาดคอลลัมน์ที่มีชื่อขึ้นต้นด้วย `name_`.' 
     )
     
+    # Validate missing amount
+    mask = (df['amount'] == -1)
+    df.loc[mask, ['error_message']] = df.loc[mask, ['error_message']].apply(
+        lambda old_err_mesg: old_err_mesg + '"amount" ไม่ใช่ตัวเลข.' 
+    )
+    
     return df
     
 def validate_and_add_error_message(
