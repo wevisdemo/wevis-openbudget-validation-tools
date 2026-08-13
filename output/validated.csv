@@ -31,3 +31,5 @@ error_message,budget_type,name_1,name_2,name_3,name_4,name_5,name_6,name_7,name_
 ,BUDGET_DETAIL,,,,,,1.2 ค่าสาธารณูปโภค,,,,,,550000,pdfs/doc_1.pdf,7,,
 ,BUDGET_DETAIL,,,,,2. งบลงทุน,,,,,,,500000,pdfs/doc_1.pdf,7,,
 ,BUDGET_DETAIL,,<MISSING>,,,,,,,,,,0,pdfs/doc_1.pdf,7,,
+category level ควรเป็น OUTPUT หรือ PROJECT,BUDGET_DETAIL,,,,โครงการ : โครงการพัฒนาไม้กายสิทธิ์,,,,,,,,1500000,pdfs/doc_1.pdf,7,,
+,BUDGET_DETAIL,,,,,1. งบดำเนินงาน,,,,,,,1000000,pdfs/doc_1.pdf,7,,
