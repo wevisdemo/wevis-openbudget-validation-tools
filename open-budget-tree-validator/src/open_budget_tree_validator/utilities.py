@@ -1,5 +1,7 @@
+from typing import Tuple
 import re
 import pandas as pd
+from .constants import PREFIX_PATTERNS
 
 def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
     cleaned_budget_df = df.fillna('')
@@ -37,3 +39,14 @@ def add_depth_and_text(budget_tree: pd.DataFrame) -> pd.DataFrame:
     )
     
     return budget_tree
+
+def get_prefix_pattern(text: str) -> Tuple[str|None, int|None]:
+  # Get text and extract prefix pattern and order of the prefix
+  text = text.strip()
+  for pattern, order in PREFIX_PATTERNS:
+    match = re.match(pattern, text)
+    if match:
+      if order is None:
+        return pattern, 0
+      return pattern, int(match.group(order))
+  return None, None

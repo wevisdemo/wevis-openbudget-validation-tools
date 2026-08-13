@@ -1,6 +1,7 @@
 import re
 import pandas as pd
 from .tree_validator import validate_and_add_error_message
+from .tree_auto_corrector import correct_budget_tree
 from .utilities import clean_budget_tree, add_depth_and_text
 
 class BudgetTree():
@@ -32,3 +33,5 @@ class BudgetTree():
         
         return self.get_budget_tree()
         
+    def auto_correct_tree(self) -> None:
+        self.budget_tree = correct_budget_tree(self.budget_tree)
