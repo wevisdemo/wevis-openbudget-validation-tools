@@ -3,7 +3,11 @@ import pandas as pd
 from .utilities import get_prefix_pattern
 
 def correct_chunk_tree(chunk_df: pd.DataFrame) -> pd.DataFrame:
-    
+    """_summary_
+    Detect & rearrange hierarchy of budget tree in chunk 
+    based on prefix and prefix number
+    """
+        
     df = chunk_df.copy()
     
     base_level = df.head(1)['_depth'].values[0]
@@ -56,7 +60,7 @@ def correct_chunk_tree(chunk_df: pd.DataFrame) -> pd.DataFrame:
 
 def correct_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
     """_summary_
-    TBA
+    Auto detect & rearrange budget tree based on prefix and prefix number
     """
     
     # Split data into `BUDGETARY_UNIT` chunks
