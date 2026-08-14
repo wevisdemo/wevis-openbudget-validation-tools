@@ -52,4 +52,10 @@ class BudgetTree():
             return self.budget_tree
         
         skeleton_df = generate_skeleton_from_df(self.budget_bureau_df)
+        # Normalize skeleton columns
+        skeleton_df[[
+            col for col in self.get_budget_tree().columns if col not in skeleton_df.columns
+        ]] = ''
+        skeleton_df = skeleton_df[self.get_budget_tree().columns]
+        
         return skeleton_df
