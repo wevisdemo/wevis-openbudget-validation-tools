@@ -165,4 +165,6 @@ def validate_and_add_error_message(
     # Validate Hierarchy
     validated_hierarchy_df = validate_budget_hierarchy(validated_amount_df)
     
+    validated_hierarchy_df.replace("<MISSING>", "", inplace=True)
+    
     return validated_hierarchy_df
