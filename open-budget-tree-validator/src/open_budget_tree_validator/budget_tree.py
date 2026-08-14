@@ -70,11 +70,20 @@ class BudgetTree():
         if self.budget_bureau_df is None:
             return self.budget_tree
         
-        skeleton_df = generate_skeleton_from_df(self.budget_bureau_df)
+        budget_tree = self.get_budget_tree()
+        
+        skeletons = generate_skeleton_from_df(self.budget_bureau_df)
+        skeleton_df = pd.concat(
+            [sk.get_skeleton_tree() for sk in skeletons],
+            ignore_index=True
+        )
         # Normalize skeleton columns
         skeleton_df[[
-            col for col in self.get_budget_tree().columns if col not in skeleton_df.columns
+            col for col in budget_tree.columns if col not in skeleton_df.columns
         ]] = ''
         skeleton_df = skeleton_df[self.get_budget_tree().columns]
+        
+        # TODO
+        # Fill in any missing plan with skeleton
         
         return skeleton_df
