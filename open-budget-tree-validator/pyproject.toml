@@ -4,7 +4,7 @@ version = "0.0.1"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "pandas", "numpy"
+    "pandas", "numpy", "levenshtein"
 ]
 
 [build-system]

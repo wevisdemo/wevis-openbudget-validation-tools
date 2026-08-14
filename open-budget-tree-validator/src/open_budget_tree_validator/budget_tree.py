@@ -2,7 +2,7 @@ import re
 import pandas as pd
 from .tree_validator import validate_and_add_error_message
 from .tree_auto_corrector import correct_budget_tree
-from .utilities import clean_budget_tree, add_depth_and_text
+from .utilities import clean_budget_tree, add_depth_and_text, get_closest_match
 from .skeleton_generator import generate_skeleton_from_df
 
 class BudgetTree():
@@ -20,6 +20,25 @@ class BudgetTree():
         
         # Budget Bureau df
         self.budget_bureau_df = budget_bureau_df
+        
+        # Auto correct budgetary unit names
+        self.auto_correct_budgetary_unit_names()
+            
+    def auto_correct_budgetary_unit_names(self):
+        if self.budget_bureau_df is None:
+            return
+        
+        # Clean budgetary unit name
+        budgetary_unit_names = list(self.budget_bureau_df['agc_name'].unique())
+        budgetary_unit_df = self.budget_tree.copy()
+        mask = budgetary_unit_df['budget_type'] == 'BUDGETARY_UNIT'
+        # Get matches
+        matches = budgetary_unit_df.loc[mask, '_text'].apply(
+            lambda name: get_closest_match(name, budgetary_unit_names)
+        )
+        # Assign the result to name_2 and _text columns
+        budgetary_unit_df.loc[mask, 'name_2'] = matches
+        budgetary_unit_df.loc[mask, '_text'] = matches
         
     def get_budget_tree(self) -> pd.DataFrame:
         """_summary_

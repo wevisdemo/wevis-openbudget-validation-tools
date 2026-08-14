@@ -1,7 +1,8 @@
-from typing import Tuple
+from typing import Tuple, List
 import re
 import pandas as pd
 from .constants import PREFIX_PATTERNS
+import Levenshtein
 
 def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
     cleaned_budget_df = df.fillna('')
@@ -50,3 +51,21 @@ def get_prefix_pattern(text: str) -> Tuple[str|None, int|None]:
         return pattern, 0
       return pattern, int(match.group(order))
   return None, None
+
+def get_closest_match(
+    text: str, 
+    match_pool: List[str],
+    threshold: float=0.92
+) -> str:
+    
+    # for word in match_pool:
+    #     dist = Levenshtein.distance(text, word)
+    #     ratio = Levenshtein.ratio(text, word)
+    #     print(f"Target: {text} | Compare: {word} | Distance: {dist} | Ratio: {ratio:.2f}")
+
+    # Find the best match from the list based on highest ratio
+    best_match = max(match_pool, key=lambda w: Levenshtein.ratio(text, w))
+    if Levenshtein.ratio(text, best_match) >= threshold:
+        return best_match
+    return text
+    
