@@ -121,7 +121,6 @@ class BudgetTree():
                 missing_outputs = [
                     sk for sk in plan_skeletons if sk.get_output_text() not in output_names
                 ]    
-                print(missing_outputs)
                 budgetary_unit_chunks.extend([
                     sk.get_skeleton_tree() for sk in missing_outputs
                 ])
