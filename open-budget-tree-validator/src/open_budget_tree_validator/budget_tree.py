@@ -24,7 +24,7 @@ class BudgetTree():
         # Auto correct budgetary unit names
         self.auto_correct_budgetary_unit_names()
             
-    def auto_correct_budgetary_unit_names(self):
+    def auto_correct_budgetary_unit_names(self) -> None:
         if self.budget_bureau_df is None:
             return
         
@@ -39,6 +39,7 @@ class BudgetTree():
         # Assign the result to name_2 and _text columns
         budgetary_unit_df.loc[mask, 'name_2'] = matches
         budgetary_unit_df.loc[mask, '_text'] = matches
+        self.budget_tree = budgetary_unit_df
         
     def get_budget_tree(self) -> pd.DataFrame:
         """_summary_
