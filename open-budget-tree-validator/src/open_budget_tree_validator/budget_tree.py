@@ -67,7 +67,7 @@ class BudgetTree():
         
     def generate_skeleton(self) -> pd.DataFrame:
         """_summary_
-        Generate a skeleton tree from the budget bureau df
+        Generate a skeleton tree from the budget bureau df and update budget tree
         """
         if self.budget_bureau_df is None:
             return self.budget_tree
