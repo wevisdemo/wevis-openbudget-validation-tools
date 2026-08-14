@@ -3,15 +3,23 @@ import pandas as pd
 from .tree_validator import validate_and_add_error_message
 from .tree_auto_corrector import correct_budget_tree
 from .utilities import clean_budget_tree, add_depth_and_text
+from .skeleton_generator import generate_skeleton_from_df
 
 class BudgetTree():
-    def __init__(self, budget_tree_df: pd.DataFrame):
+    def __init__(
+        self, 
+        budget_tree_df: pd.DataFrame,
+        budget_bureau_df: pd.DataFrame|None=None
+    ):
         
         # Clean budget tree
         self.budget_tree = clean_budget_tree(budget_tree_df)
         
         # Add _depth and _text
         self.budget_tree = add_depth_and_text(self.budget_tree)
+        
+        # Budget Bureau df
+        self.budget_bureau_df = budget_bureau_df
         
     def get_budget_tree(self) -> pd.DataFrame:
         """_summary_
@@ -35,3 +43,13 @@ class BudgetTree():
         
     def auto_correct_tree(self) -> None:
         self.budget_tree = correct_budget_tree(self.budget_tree)
+        
+    def generate_skeleton(self) -> pd.DataFrame:
+        """_summary_
+        Generate a skeleton tree from the budget bureau df
+        """
+        if self.budget_bureau_df is None:
+            return self.budget_tree
+        
+        skeleton_df = generate_skeleton_from_df(self.budget_bureau_df)
+        return skeleton_df
