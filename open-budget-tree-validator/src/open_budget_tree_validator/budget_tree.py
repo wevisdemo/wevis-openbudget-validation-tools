@@ -22,6 +22,9 @@ class BudgetTree():
         # Budget Bureau df
         self.budget_bureau_df = budget_bureau_df
         
+        # Setup skeleton list
+        self.closet: List[SkeletonBudget] = []
+        
         # Auto correct budgetary unit names
         self.auto_correct_budgetary_unit_names()
             
@@ -118,9 +121,13 @@ class BudgetTree():
                 ]
                 output_names = plan_chunk[plan_chunk['budget_type'].isin(['OUTPUT', 'PROJECT'])]['_text'].values
                 
+                # Skeleton of missing output/project
                 missing_outputs = [
                     sk for sk in plan_skeletons if sk.get_output_text() not in output_names
-                ]    
+                ]
+                # Add skeleton to closet
+                self.closet.extend(missing_outputs)
+                
                 budgetary_unit_chunks.extend([
                     sk.get_skeleton_tree() for sk in missing_outputs
                 ])
