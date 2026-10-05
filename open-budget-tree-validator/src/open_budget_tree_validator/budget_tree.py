@@ -134,6 +134,17 @@ class BudgetTree():
         )
         return self.budget_tree
     
-    def build_final_df(self):
+    def build_final_df(self, budget_year: int):
+        
+        # Build initial final df
         final_df = build_final_budget_df(self.budget_tree)
+        
+        # Add budget year for every empty fiscal years
+        final_df.loc[:, 'FISCAL_YEAR'] = final_df['FISCAL_YEAR'].fillna(budget_year).astype(int)
+        
+        # Convert year to AD
+        final_df.loc[:, 'FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(
+            lambda y: y - 543
+        )
+        
         return final_df
