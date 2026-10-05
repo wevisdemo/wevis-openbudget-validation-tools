@@ -5,6 +5,7 @@ from .tree_validator import validate_and_add_error_message
 from .tree_auto_corrector import correct_budget_tree
 from .utilities import clean_budget_tree, add_depth_and_text, get_closest_match
 from .skeleton_generator import generate_skeleton_from_df, SkeletonBudget
+from .final_df_builder import build_final_budget_df
 
 class BudgetTree():
     def __init__(
@@ -132,3 +133,7 @@ class BudgetTree():
             ignore_index=True
         )
         return self.budget_tree
+    
+    def build_final_df(self):
+        final_df = build_final_budget_df(self.budget_tree)
+        return final_df
