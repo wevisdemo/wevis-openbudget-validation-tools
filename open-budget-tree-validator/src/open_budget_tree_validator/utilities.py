@@ -79,7 +79,7 @@ def clean_item_name(text: str) -> str:
     text = clean_prefix_pattern(text)
     
     # Clean numbers
-    text = re.sub(r"\d(\,\d{3}){1,}\s?บาท", "", text)
+    text = re.sub(r"\d+(\,\d{3}){1,}\s?บาท", "", text)
     
     # Clean space
     text = re.sub(r"\s+", " ", text)
