@@ -1,7 +1,7 @@
 from typing import Tuple, List
 import re
 import pandas as pd
-from .constants import PREFIX_PATTERNS
+from .constants import PREFIX_PATTERNS, REMOVE_PREFIX_PATTERNS
 import Levenshtein
 
 def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
@@ -55,7 +55,7 @@ def get_prefix_pattern(text: str) -> Tuple[str|None, int|None]:
 def clean_prefix_pattern(text: str) -> str:
     # Get text and extract prefix pattern and order of the prefix
     text = text.strip()
-    for pattern, _ in PREFIX_PATTERNS:
+    for pattern, _ in REMOVE_PREFIX_PATTERNS:
         match = re.match(pattern, text)
         if match:
             return re.sub(pattern, "", text).strip()
