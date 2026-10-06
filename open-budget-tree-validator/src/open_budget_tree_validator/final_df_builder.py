@@ -22,8 +22,6 @@ def process_budget_items(
         item_name = first_row['_text'].values[0]
         item_amount = first_row['amount'].values[0]
         if len(_chunk.index) == 1: # not a fiscal year
-            print(item_name)
-            print(category)
             data.append({
                 'REF_DOC': items_df['document'].values[0],
                 'REF_PAGE_NO': items_df['page'].values[0],
