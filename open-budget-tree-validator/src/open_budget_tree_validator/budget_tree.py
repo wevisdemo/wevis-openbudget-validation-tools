@@ -3,7 +3,7 @@ import re
 import pandas as pd
 from .tree_validator import validate_and_add_error_message
 from .tree_auto_corrector import correct_budget_tree
-from .utilities import clean_budget_tree, add_depth_and_text, get_closest_match
+from .utilities import clean_budget_tree, add_depth_and_text, get_closest_match, clean_prefix_pattern
 from .skeleton_generator import generate_skeleton_from_df, SkeletonBudget
 from .final_df_builder import build_final_budget_df
 
@@ -145,6 +145,32 @@ class BudgetTree():
         # Convert year to AD
         final_df.loc[:, 'FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(
             lambda y: y - 543
+        )
+        
+        # Clean names
+        # BUDGET_PLAN
+        final_df.loc[:, 'BUDGET_PLAN'] = final_df['BUDGET_PLAN'].apply(
+            lambda text: re.sub(r"^7\.\d+\s?", "", text).strip() if text else ""
+        )
+        
+        # OUTPUT & PROJECT
+        final_df.loc[:, 'OUTPUT'] = final_df['OUTPUT'].apply(
+            lambda text: re.sub(r"^.+?\:\s?", "", text).strip() if text else ""
+        )
+        final_df.loc[:, 'PROJECT'] = final_df['PROJECT'].apply(
+            lambda text: re.sub(r"^.+?\:\s?", "", text).strip() if text else ""
+        )
+        
+        # CATEGORY_LV1 - CATEGORY_LV7
+        for i in range(1, 7+1):
+            col = f"CATEGORY_LV{i}"
+            final_df.loc[:, col] = final_df[col].apply(
+                lambda text: clean_prefix_pattern(text) if text else ""
+            )
+        
+        # ITEM_DESCRIPTION
+        final_df.loc[:, 'ITEM_DESCRIPTION'] = final_df['ITEM_DESCRIPTION'].apply(
+            lambda text: clean_prefix_pattern(text) if text else ""
         )
         
         return final_df

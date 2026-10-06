@@ -52,6 +52,15 @@ def get_prefix_pattern(text: str) -> Tuple[str|None, int|None]:
       return pattern, int(match.group(order))
   return None, None
 
+def clean_prefix_pattern(text: str) -> str:
+    # Get text and extract prefix pattern and order of the prefix
+    text = text.strip()
+    for pattern, _ in PREFIX_PATTERNS:
+        match = re.match(pattern, text)
+        if match:
+            return re.sub(pattern, "", text).strip()
+    return text
+
 def get_closest_match(
     text: str, 
     match_pool: List[str],
