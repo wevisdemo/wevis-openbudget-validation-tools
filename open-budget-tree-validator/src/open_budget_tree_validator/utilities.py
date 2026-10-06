@@ -67,11 +67,6 @@ def get_closest_match(
     threshold: float=0.92
 ) -> str:
     
-    # for word in match_pool:
-    #     dist = Levenshtein.distance(text, word)
-    #     ratio = Levenshtein.ratio(text, word)
-    #     print(f"Target: {text} | Compare: {word} | Distance: {dist} | Ratio: {ratio:.2f}")
-
     # Find the best match from the list based on highest ratio
     best_match = max(match_pool, key=lambda w: Levenshtein.ratio(text, w))
     if Levenshtein.ratio(text, best_match) >= threshold:
