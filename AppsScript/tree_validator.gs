@@ -13,6 +13,11 @@ function onOpen() {
 }
 
 /**
+ * Setup for each fiscal year
+ */
+const TARGET_BUDGET_YEAR = '2570';
+
+/**
  * Main function to read data, validate, and write back ONLY to Column A.
  */
 function runBudgetValidation() {
@@ -67,7 +72,11 @@ function runBudgetValidation() {
   // --- Step 1: Validate Informations ---
   let validatedRows = validate_informations(allRows);
 
+  // --- Step 1.5: Validate Fiscal Year Targets ---
+  validatedRows = validate_fiscal_year(validatedRows, TARGET_BUDGET_YEAR);
+
   // --- Step 2: Validate Amount in chunks recursively ---
+  // (IMPORTANT: Make sure to revert this back to your original function!)
   validatedRows = validate_amount_in_chunk(validatedRows);
 
   // --- Step 3: Validate Budget Hierarchy ---
@@ -303,4 +312,45 @@ function validate_budget_hierarchy(rows) {
   }
   
   return processed_chunks;
+}
+
+/**
+ * Step 1.5: Validates that FISCAL_YEAR_BUDGET amounts match 
+ * the preceding item at the EXACT SAME level.
+ */
+function validate_fiscal_year(rows, targetYear) {
+  let last_item_at_depth = {};
+  let formatNum = (num) => num.toLocaleString('en-US');
+
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i];
+    let depth = Number(row._depth);
+
+    if (row.budget_type === 'FISCAL_YEAR_BUDGET') {
+      // Check if this fiscal row mentions our target year
+      if (String(row._text).includes(targetYear)) {
+         let target_item = last_item_at_depth[depth]; // Get the item it belongs to
+         
+         if (target_item) {
+             let fiscal_amt = Number(row.amount) || 0;
+             let item_amt = Number(target_item.amount) || 0;
+             
+             if (fiscal_amt !== item_amt) {
+                 let err = `ยอดผูกพันปี ${targetYear} (${formatNum(fiscal_amt)}) ไม่ตรงกับงบของรายการนี้ (${formatNum(item_amt)}). `;
+                 // Write the error back to the MAIN item, not the fiscal year row
+                 target_item.error_message = (target_item.error_message ? target_item.error_message + " " : "") + err;
+             }
+         }
+      }
+    } else {
+      // This is a standard item. Remember it as the "active" item for this depth.
+      last_item_at_depth[depth] = row;
+      
+      // Clear any remembered items at deeper levels, so old items don't accidentally get matched
+      for (let d = depth + 1; d <= 11; d++) {
+         last_item_at_depth[d] = null;
+      }
+    }
+  }
+  return rows;
 }
