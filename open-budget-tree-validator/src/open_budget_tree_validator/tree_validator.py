@@ -33,7 +33,9 @@ def validate_amount_in_chunk(chunk_df: pd.DataFrame) -> pd.DataFrame:
     
     # Get amount from next depth
     children_sum = validated_chunks.loc[
-        validated_chunks['_depth'] == current_depth + 1, ['amount']
+        (validated_chunks['_depth'] == current_depth + 1)\
+            & (validated_chunks['budget_type'] != 'FISCAL_YEAR_BUDGET'), 
+        ['amount']
     ].clip(lower=0)['amount'].sum()
     
     if children_sum != current_amount:
