@@ -147,9 +147,73 @@ def validate_infomations(df: pd.DataFrame) -> pd.DataFrame:
     )
     
     return df
+
+import pandas as pd
+
+def validate_fiscal_year(df: pd.DataFrame, target_year: str | int) -> pd.DataFrame:
+    """
+    Validates that FISCAL_YEAR_BUDGET amounts match 
+    the preceding item at the EXACT SAME depth level sequentially.
+    """
+    target_year_str = str(target_year)
+    
+    # Dictionary to track the DataFrame index of the last seen regular item per depth
+    last_item_idx_at_depth = {}
+    
+    # Dictionary to collect errors {index: ["error_1", "error_2"]} before updating the DataFrame
+    new_errors = {}
+
+    # Iterate through the DataFrame top-to-bottom
+    for idx, row in df.iterrows():
+        depth = row['_depth']
+        
+        if row['budget_type'] == 'FISCAL_YEAR_BUDGET':
+            # Check if this fiscal row mentions our target year
+            if target_year_str in str(row['_text']):
+                target_idx = last_item_idx_at_depth.get(depth)
+                
+                if target_idx is not None:
+                    # Safely extract amounts, treating NaNs as 0
+                    fiscal_amt = 0 if pd.isna(row['amount']) else row['amount']
+                    item_amt = 0 if pd.isna(df.at[target_idx, 'amount']) else df.at[target_idx, 'amount']
+                    
+                    if fiscal_amt != item_amt:
+                        # Construct error message mimicking the style of your other function
+                        err = f"ยอดผูกพันปี {target_year_str} ({fiscal_amt:,}) "
+                        err += f"ไม่ตรงกับงบของรายการนี้ ({item_amt:,})."
+                        
+                        if target_idx in new_errors:
+                            new_errors[target_idx].append(err)
+                        else:
+                            new_errors[target_idx] = [err]
+        else:
+            # Standard item: Remember its DataFrame index for this depth
+            last_item_idx_at_depth[depth] = idx
+            
+            # Clear stored indices for deeper levels so old items don't accidentally match
+            keys_to_remove = [k for k in last_item_idx_at_depth.keys() if k > depth]
+            for k in keys_to_remove:
+                del last_item_idx_at_depth[k]
+
+    # Apply all collected errors to the DataFrame
+    if new_errors:
+        if 'error_message' not in df.columns:
+            df['error_message'] = ""
+            
+        for idx, err_list in new_errors.items():
+            err_str = " ".join(err_list)
+            old_msg = df.at[idx, 'error_message']
+            
+            if pd.isna(old_msg) or str(old_msg).strip() == "":
+                df.at[idx, 'error_message'] = err_str
+            else:
+                df.at[idx, 'error_message'] = " ".join([str(old_msg).strip(), err_str])
+
+    return df
     
 def validate_and_add_error_message(
-    df: pd.DataFrame
+    df: pd.DataFrame,
+    budget_year: int
 ) -> pd.DataFrame:
     """_summary_
     Validate and add error message in budget tree.
@@ -161,6 +225,9 @@ def validate_and_add_error_message(
     
     # Validate Amount
     validated_amount_df = validate_amount_in_chunk(validated_info_df)
+    
+    # Validate Fiscal year
+    validate_fiscal_year(df, target_year=budget_year)
     
     # Validate Hierarchy
     validated_hierarchy_df = validate_budget_hierarchy(validated_amount_df)

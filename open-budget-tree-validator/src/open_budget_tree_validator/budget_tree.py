@@ -11,7 +11,8 @@ class BudgetTree():
     def __init__(
         self, 
         budget_tree_df: pd.DataFrame,
-        budget_bureau_df: pd.DataFrame|None=None
+        budget_year: int,
+        budget_bureau_df: pd.DataFrame|None=None,
     ):
         
         # Clean budget tree
@@ -25,6 +26,9 @@ class BudgetTree():
         
         # Setup skeleton list
         self.closet: List[SkeletonBudget] = []
+        
+        # Budget year
+        self.budget_year = budget_year
         
         # Auto correct budgetary unit names
         self.auto_correct_budgetary_unit_names()
@@ -62,7 +66,10 @@ class BudgetTree():
         """_summary_
         Validate tree and add error explanation to `error_message` column
         """
-        self.budget_tree = validate_and_add_error_message(self.budget_tree)
+        self.budget_tree = validate_and_add_error_message(
+            self.budget_tree,
+            self.budget_year
+        )
         
         return self.get_budget_tree()
         
