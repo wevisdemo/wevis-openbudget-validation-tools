@@ -8,7 +8,7 @@ def main():
     # Mock Budget Bureau data
     budget_bureau_df = pd.read_csv("data/mock_budget_bureau.csv")
     
-    budget_tree = BudgetTree(mock_df, budget_bureau_df=budget_bureau_df)
+    budget_tree = BudgetTree(mock_df, 2570, budget_bureau_df=budget_bureau_df)
     
     validated_tree = budget_tree.get_validate_tree()
     validated_tree.to_csv('output/validated.csv', index=False)
