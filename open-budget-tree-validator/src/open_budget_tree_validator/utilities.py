@@ -11,6 +11,9 @@ def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
     cleaned_budget_df.loc[:, 'amount'] = cleaned_budget_df['amount'].apply(
         lambda amount: re.sub(r"\,|\_", "", str(amount)).strip() if amount else '-1'
     )
+    cleaned_budget_df.loc[:, 'amount'] = cleaned_budget_df['amount'].apply(
+        lambda amount: re.sub(r"\.\d+", "", str(amount)).strip() if amount else '-1'
+    )
     cleaned_budget_df['amount'] = cleaned_budget_df['amount'].astype(int)
     
     # Clean name_X columns
