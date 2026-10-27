@@ -56,12 +56,19 @@ def get_prefix_pattern(text: str) -> Tuple[str|None, int|None]:
   return None, None
 
 def clean_prefix_pattern(text: str) -> str:
-    # Get text and extract prefix pattern and order of the prefix
     text = text.strip()
+    longest_match = None
+
     for pattern, _ in REMOVE_PREFIX_PATTERNS:
         match = re.match(pattern, text)
         if match:
-            return re.sub(pattern, "", text).strip()
+            # Keep the match that covers the most characters at the start
+            if longest_match is None or match.end() > longest_match.end():
+                longest_match = match
+
+    if longest_match:
+        return text[longest_match.end():].strip()
+    
     return text
 
 def get_closest_match(
