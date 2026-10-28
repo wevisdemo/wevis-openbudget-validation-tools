@@ -4,24 +4,49 @@ import pandas as pd
 from .constants import PREFIX_PATTERNS, REMOVE_PREFIX_PATTERNS
 import Levenshtein
 
+
+def clean_amount_to_int(val) -> int:
+    """
+    Converts None, NaN, pd.NA, '-', empty strings, or whitespace-only strings to 0.
+    Otherwise strips formatting (commas, underscores, decimals) and returns int.
+    """
+    # Handle None, np.nan, pd.NA
+    if val is None or pd.isna(val):
+        return 0
+
+    # Strip surrounding whitespace
+    val_str = str(val).strip()
+
+    # Handle empty string, whitespace only, "-", or string NaN representations
+    if val_str in ("", "-", "<NA>", "nan", "NaN"):
+        return 0
+
+    # Remove commas, underscores, and decimal places (e.g., '1,234.56' -> '1234')
+    val_str = re.sub(r"[,_]", "", val_str)
+    val_str = re.sub(r"\.\d+", "", val_str)
+
+    try:
+        return int(val_str)
+    except ValueError:
+        return int(float(val_str))
+
+
 def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
-    cleaned_budget_df = df.fillna('')
-    
-    # Clean & Normalize amount to be int
-    cleaned_budget_df.loc[:, 'amount'] = cleaned_budget_df['amount'].apply(
-        lambda amount: re.sub(r"\,|\_", "", str(amount)).strip() if amount else '-1'
-    )
-    cleaned_budget_df.loc[:, 'amount'] = cleaned_budget_df['amount'].apply(
-        lambda amount: re.sub(r"\.\d+", "", str(amount)).strip() if amount else '-1'
-    )
-    cleaned_budget_df['amount'] = cleaned_budget_df['amount'].astype(int)
-    
+    cleaned_budget_df = df.copy()
+
+    # Clean & Normalize 'amount' to int
+    cleaned_budget_df["amount"] = cleaned_budget_df["amount"].apply(clean_amount_to_int)
+
+    # Fill NA with empty strings for the remaining text columns
+    cleaned_budget_df = cleaned_budget_df.fillna("")
+
     # Clean name_X columns
-    name_cols = [f'name_{x}' for x in range(1, 12)]
-    contain_text_mask = (cleaned_budget_df[name_cols] != '').any(axis=1) # mask
-    # Update 'name_2' to `MISSING` if none of columns contain text
-    cleaned_budget_df.loc[~contain_text_mask, 'name_2'] = "<MISSING>"
-    
+    name_cols = [f"name_{x}" for x in range(1, 12)]
+    contain_text_mask = (cleaned_budget_df[name_cols] != "").any(axis=1)
+
+    # Update 'name_2' to `<MISSING>` if none of the columns contain text
+    cleaned_budget_df.loc[~contain_text_mask, "name_2"] = "<MISSING>"
+
     return cleaned_budget_df
 
 def get_text_and_depth(row):
