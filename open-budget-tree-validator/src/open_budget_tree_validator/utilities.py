@@ -36,6 +36,9 @@ def clean_budget_tree(df: pd.DataFrame) -> pd.DataFrame:
 
     # Clean & Normalize 'amount' to int
     cleaned_budget_df["amount"] = cleaned_budget_df["amount"].apply(clean_amount_to_int)
+    
+    # Replace " " with ""
+    cleaned_budget_df = cleaned_budget_df.replace(r'^\s*$', '', regex=True)
 
     # Fill NA with empty strings for the remaining text columns
     cleaned_budget_df = cleaned_budget_df.fillna("")
