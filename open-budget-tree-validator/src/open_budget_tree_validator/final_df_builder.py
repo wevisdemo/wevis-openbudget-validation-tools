@@ -95,11 +95,15 @@ def build_final_budget_df(
     if categories_lv is None:
         categories_lv = []
 
-    # BASE CASE 1: Deepest level reached
-    # If the chunk consists entirely of rows at the SAME depth, 
-    # there are no further sub-levels. This perfectly captures 
-    # a single item, or an item + its FISCAL_YEAR_BUDGET rows!
-    if len(chunk_df['_depth'].unique()) == 1:
+    if chunk_df.empty:
+        return pd.DataFrame()
+
+    # --- BASE CASE: Leaf Node (Item + Fiscal Years) ---
+    # If the chunk contains exactly ONE non-fiscal-year row, it is a single item.
+    # It should be processed directly along with its fiscal years, regardless 
+    # of whether the fiscal years are at the same depth or a different depth!
+    non_fy_mask = chunk_df['budget_type'] != 'FISCAL_YEAR_BUDGET'
+    if non_fy_mask.sum() == 1:
         return process_budget_items(
             chunk_df,
             ministry=ministry,
@@ -110,69 +114,73 @@ def build_final_budget_df(
             categories_lv=categories_lv,
         )
 
-    # Get first row as header of chunk
-    first_row = chunk_df.head(1)
+    # Handle edge case where a chunk somehow only contains orphaned fiscal years
+    if non_fy_mask.sum() == 0:
+        return process_budget_items(
+            chunk_df, ministry=ministry, budgetary_unit=budgetary_unit,
+            budget_plan=budget_plan, output=output, project=project,
+            categories_lv=categories_lv
+        )
+
+    # --- Sibling Splitting ---
+    # Find the minimum depth among the non-fiscal-year rows.
+    # This depth represents the root(s) of the current chunk.
+    min_depth = chunk_df.loc[non_fy_mask, '_depth'].min()
+    
+    # Identify all root nodes in this chunk
+    is_root = (chunk_df['_depth'] == min_depth) & non_fy_mask
+    
+    # If there are multiple siblings at this root level, split them into separate subtrees.
+    if is_root.sum() > 1:
+        chunk_ids = is_root.cumsum()
+        return pd.concat(
+            [
+                build_final_budget_df(
+                    _chunk,
+                    ministry=ministry,
+                    budgetary_unit=budgetary_unit,
+                    budget_plan=budget_plan,
+                    output=output,
+                    project=project,
+                    categories_lv=categories_lv,
+                )
+                for i, _chunk in chunk_df.groupby(chunk_ids)
+                if i > 0 # Skip any orphaned rows before the first root
+            ],
+            ignore_index=True
+        )
+
+    # --- Process Single Subtree ---
+    # At this point, we are guaranteed to have exactly ONE root node (parent).
+    first_row = chunk_df[is_root].head(1)
+    root_idx = first_row.index[0]
     
     current_type = first_row['budget_type'].values[0]
     current_text = first_row['_text'].values[0]
         
     # --- Context Update ---
-    # Update context variables BEFORE processing children
     match current_type:
-        case 'MINISTRY':
-            ministry = current_text
-        case 'BUDGETARY_UNIT':
-            budgetary_unit = current_text
-        case 'BUDGET_PLAN':
-            budget_plan = current_text
-        case 'OUTPUT':
-            output = current_text
-        case 'PROJECT':
-            project = current_text
-        case _:
-            # Create a new list for this branch specifically
-            categories_lv = categories_lv + [current_text]
+        case 'MINISTRY': ministry = current_text
+        case 'BUDGETARY_UNIT': budgetary_unit = current_text
+        case 'BUDGET_PLAN': budget_plan = current_text
+        case 'OUTPUT': output = current_text
+        case 'PROJECT': project = current_text
+        case _: categories_lv = categories_lv + [current_text]
 
     # --- Recursive Chunking ---
-    children_df = chunk_df.iloc[1:]
+    # The children are all rows strictly AFTER the root node.
+    root_iloc = chunk_df.index.get_loc(root_idx)
+    children_df = chunk_df.iloc[root_iloc + 1:] # type: ignore
     
-    # BASE CASE 2 (Speed Optimization):
-    # If all remaining children are at the same depth, they are leaf nodes.
-    # Pass them as a batch to process_budget_items so fiscal years are processed together.
-    if len(children_df['_depth'].unique()) == 1:
-        return process_budget_items(
-            children_df,
-            ministry=ministry,
-            budgetary_unit=budgetary_unit,
-            budget_plan=budget_plan,
-            output=output,
-            project=project,
-            categories_lv=categories_lv,
-        )
+    if children_df.empty:
+        return pd.DataFrame()
 
-    # Find the depth of the immediate children (using .min() prevents bugs if depth skips numbers e.g. 6 to 8)
-    next_depth = children_df['_depth'].min()
-    
-    # Split next depth into chunks. Every sibling sub-tree gets its own chunk.
-    # FIX: FISCAL_YEAR_BUDGET rows do NOT start a new chunk; they stick to their parent item!
-    is_new_chunk = (children_df['_depth'] == next_depth) & (children_df['budget_type'] != 'FISCAL_YEAR_BUDGET')
-    chunk_ids = is_new_chunk.cumsum()
-    
-    # Process each chunk recursively and combine
-    process_df = pd.concat(
-        [
-            build_final_budget_df(
-                _chunk,
-                ministry=ministry,
-                budgetary_unit=budgetary_unit,
-                budget_plan=budget_plan,
-                output=output,
-                project=project,
-                categories_lv=categories_lv,
-            )
-            for _, _chunk in children_df.groupby(chunk_ids)
-        ],
-        ignore_index=True
+    return build_final_budget_df(
+        children_df,
+        ministry=ministry,
+        budgetary_unit=budgetary_unit,
+        budget_plan=budget_plan,
+        output=output,
+        project=project,
+        categories_lv=categories_lv,
     )
-
-    return process_df
