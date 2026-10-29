@@ -41,7 +41,9 @@ def process_budget_items(
                 'ITEM_DESCRIPTION': item_name,
                 'AMOUNT': item_amount,
                 'FISCAL_YEAR': None,
-                'OBLIGED?': False
+                'OBLIGED?': False,
+                '_document': items_df['document'].values[0],
+                '_page': items_df['page'].values[0],
             })
             continue
             
