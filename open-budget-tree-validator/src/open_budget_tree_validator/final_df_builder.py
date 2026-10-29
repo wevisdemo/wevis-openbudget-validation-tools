@@ -77,7 +77,9 @@ def process_budget_items(
                     'ITEM_DESCRIPTION': item_name,
                     'AMOUNT': splited_amount,
                     'FISCAL_YEAR': year,
-                    'OBLIGED?': True
+                    'OBLIGED?': True,
+                    '_document': items_df['document'].values[0],
+                    '_page': items_df['page'].values[0],
                 })
         
     return pd.DataFrame(data)
