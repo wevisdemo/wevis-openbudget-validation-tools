@@ -147,10 +147,14 @@ class BudgetTree():
         final_df = build_final_budget_df(self.budget_tree)
         
         # Add budget year for every empty fiscal years
-        final_df.loc['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].fillna(budget_year).astype(int)
+        # Converts everything to integer, safely keeping missing values as <NA>
+        final_df['FISCAL_YEAR'] = pd.to_numeric(final_df['FISCAL_YEAR'], errors='coerce').astype("Int64")
+
+        # Fill missing values
+        final_df['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].fillna(int(budget_year))
         
         # Convert year to AD
-        final_df.loc[:, 'FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(
+        final_df['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(
             lambda y: y - 543
         )
         
