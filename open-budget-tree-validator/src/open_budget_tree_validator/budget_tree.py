@@ -1,42 +1,50 @@
-from typing import List
 import re
-import pandas as pd
-from .tree_validator import validate_and_add_error_message
-from .tree_auto_corrector import correct_budget_tree
-from .utilities import clean_budget_tree, add_depth_and_text, get_closest_match, clean_item_name
-from .skeleton_generator import generate_skeleton_from_df, SkeletonBudget
-from .final_df_builder import build_final_budget_df
+from typing import List
 
-class BudgetTree():
+import pandas as pd
+
+from .final_df_builder import build_final_budget_df
+from .skeleton_generator import SkeletonBudget, generate_skeleton_from_df
+from .tree_auto_corrector import correct_budget_tree
+from .tree_validator import validate_and_add_error_message
+from .utilities import (
+    add_depth_and_text,
+    clean_budget_tree,
+    clean_item_name,
+    get_closest_match,
+)
+
+
+class BudgetTree:
     def __init__(
-        self, 
+        self,
         budget_tree_df: pd.DataFrame,
         budget_year: int,
         budget_bureau_df: pd.DataFrame|None=None,
     ):
-        
+
         # Clean budget tree
         self.budget_tree = clean_budget_tree(budget_tree_df)
-        
+
         # Add _depth and _text
         self.budget_tree = add_depth_and_text(self.budget_tree)
-        
+
         # Budget Bureau df
         self.budget_bureau_df = budget_bureau_df
-        
+
         # Setup skeleton list
         self.closet: List[SkeletonBudget] = []
-        
+
         # Budget year
         self.budget_year = budget_year
-        
+
         # Auto correct budgetary unit names
         self.auto_correct_budgetary_unit_names()
-            
+
     def auto_correct_budgetary_unit_names(self) -> None:
         if self.budget_bureau_df is None:
             return
-        
+
         # Clean budgetary unit name
         budgetary_unit_names = list(self.budget_bureau_df['agc_name'].unique())
         budgetary_unit_df = self.budget_tree.copy()
@@ -49,19 +57,19 @@ class BudgetTree():
         budgetary_unit_df.loc[mask, 'name_2'] = matches
         budgetary_unit_df.loc[mask, '_text'] = matches
         self.budget_tree = budgetary_unit_df
-        
+
     def get_budget_tree(self) -> pd.DataFrame:
         """_summary_
         Get a full budget tree as pandas dataframe
         """
-        
+
         columns_to_drop = [col for col in self.budget_tree.columns if col.startswith("_")]
-        
+
         return self.budget_tree.drop(
             columns=columns_to_drop,
             axis=1
         )
-    
+
     def get_validate_tree(self) -> pd.DataFrame:
         """_summary_
         Validate tree and add error explanation to `error_message` column
@@ -70,24 +78,24 @@ class BudgetTree():
             self.budget_tree,
             self.budget_year
         )
-        
+
         return self.get_budget_tree()
-        
+
     def auto_correct_tree(self) -> None:
         self.budget_tree = correct_budget_tree(self.budget_tree)
-        
+
     def generate_skeleton(self) -> pd.DataFrame:
         """_summary_
         Generate a skeleton tree from the budget bureau df and update budget tree
         """
         if self.budget_bureau_df is None:
             return self.budget_tree
-        
+
         self.auto_correct_budgetary_unit_names()
         budget_tree = self.budget_tree
-        
+
         skeletons = generate_skeleton_from_df(self.budget_bureau_df)
-        
+
         # Fill in any missing plan with skeleton
         # Split data into chunks of budgetary unit
         chunk_ids = (budget_tree['budget_type'] == 'BUDGETARY_UNIT').cumsum()
@@ -96,7 +104,7 @@ class BudgetTree():
             if _unit_id == 0: # skip MINISTRY row
                 processed_chunks.append(unit_chunk)
                 continue
-            
+
             budget_unit_name = unit_chunk.head(1)['_text'].values[0]
             # Split data into chunk of budget_plan
             plan_chunk_ids = (unit_chunk['budget_type'] == 'BUDGET_PLAN').cumsum()
@@ -109,7 +117,7 @@ class BudgetTree():
                 # Check for 7.1 to skip
                 if re.search(r"^7\.1", plan_name):
                     continue
-                
+
                 # Clean plan name
                 plan_name = re.sub(r"7\.\d+\s?", "", plan_name).strip()
 
@@ -119,14 +127,14 @@ class BudgetTree():
                             and sk.budget_plan == plan_name
                 ]
                 output_names = plan_chunk[plan_chunk['budget_type'].isin(['OUTPUT', 'PROJECT'])]['_text'].values
-                
+
                 # Skeleton of missing output/project
                 missing_outputs = [
                     sk for sk in plan_skeletons if sk.get_output_text() not in output_names
                 ]
                 # Add skeleton to closet
                 self.closet.extend(missing_outputs)
-                
+
                 budgetary_unit_chunks.extend([
                     sk.get_skeleton_tree() for sk in missing_outputs
                 ])
@@ -134,54 +142,57 @@ class BudgetTree():
                 budgetary_unit_chunks,
                 ignore_index=True
             ))
-            
+
         self.budget_tree = pd.concat(
             processed_chunks,
             ignore_index=True
         )
         return self.budget_tree
-    
+
     def build_final_df(self, budget_year: int):
-        
         # Build initial final df
         final_df = build_final_budget_df(self.budget_tree)
-        
-        # Add budget year for every empty fiscal years
-        # Converts everything to integer, safely keeping missing values as <NA>
-        final_df['FISCAL_YEAR'] = pd.to_numeric(final_df['FISCAL_YEAR'], errors='coerce').astype("Int64")
 
-        # Fill missing values
+        # Add budget year for every empty fiscal years
+        final_df['FISCAL_YEAR'] = pd.to_numeric(final_df['FISCAL_YEAR'], errors='coerce').astype("Int64")
         final_df['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].fillna(int(budget_year))
-        
-        # Convert year to AD
-        final_df['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(
-            lambda y: y - 543
-        )
-        
-        # Clean names
-        # BUDGET_PLAN
+        final_df['FISCAL_YEAR'] = final_df['FISCAL_YEAR'].apply(lambda y: y - 543)
+
+        # Clean BUDGET_PLAN, OUTPUT, PROJECT
         final_df.loc[:, 'BUDGET_PLAN'] = final_df['BUDGET_PLAN'].apply(
             lambda text: clean_item_name(text) if text else ""
         )
-        
-        # OUTPUT & PROJECT
         final_df.loc[:, 'OUTPUT'] = final_df['OUTPUT'].apply(
             lambda text: clean_item_name(text) if text else ""
         )
         final_df.loc[:, 'PROJECT'] = final_df['PROJECT'].apply(
             lambda text: clean_item_name(text) if text else ""
         )
-        
-        # CATEGORY_LV1 - CATEGORY_LV7
-        for i in range(1, 7+1):
+
+        # Clean CATEGORY_LV1 - CATEGORY_LV7
+        for i in range(1, 7 + 1):
             col = f"CATEGORY_LV{i}"
             final_df.loc[:, col] = final_df[col].apply(
                 lambda text: clean_item_name(text) if text else ""
             )
-        
-        # ITEM_DESCRIPTION
-        final_df.loc[:, 'ITEM_DESCRIPTION'] = final_df['ITEM_DESCRIPTION'].apply(
+
+        # --- ITEM_DESCRIPTION Check & Clean ---
+        # 1. Tentatively clean ITEM_DESCRIPTION
+        cleaned_item_desc = final_df['ITEM_DESCRIPTION'].apply(
             lambda text: clean_item_name(text) if text else ""
         )
-        
+
+        # 2. Check duplicates across all columns except FISCAL_YEAR using the cleaned names
+        subset_cols = [c for c in final_df.columns if c != 'FISCAL_YEAR']
+        is_duplicated = final_df.assign(ITEM_DESCRIPTION=cleaned_item_desc).duplicated(
+            subset=subset_cols,
+            keep=False  # marks all duplicates in the group as True
+        )
+
+        # 3. Apply cleaned text to non-duplicates; preserve original text for duplicates
+        final_df.loc[:, 'ITEM_DESCRIPTION'] = cleaned_item_desc.mask(
+            is_duplicated,
+            final_df['ITEM_DESCRIPTION']
+        )
+
         return final_df
