@@ -176,6 +176,11 @@ class BudgetTree:
                 lambda text: clean_item_name(text) if text else ""
             )
 
+        # Clean any prefix with ()
+        final_df['ITEM_DESCRIPTION'] = final_df['ITEM_DESCRIPTION'].apply(
+            lambda text: re.sub(r"(^\(\d+(\.\d)?(\.\d)?\))\s?", r"\g<1> ", text.strip())
+        )
+
         # --- ITEM_DESCRIPTION Check & Clean ---
         # 1. Tentatively clean ITEM_DESCRIPTION
         cleaned_item_desc = final_df['ITEM_DESCRIPTION'].apply(
