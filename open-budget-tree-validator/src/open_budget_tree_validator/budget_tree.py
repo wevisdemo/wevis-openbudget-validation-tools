@@ -182,21 +182,13 @@ class BudgetTree:
         )
 
         # --- ITEM_DESCRIPTION Check & Clean ---
-        # 1. Tentatively clean ITEM_DESCRIPTION
         cleaned_item_desc = final_df['ITEM_DESCRIPTION'].apply(
             lambda text: clean_item_name(text) if text else ""
         )
 
-        # 2. Check duplicates across all columns except FISCAL_YEAR using the cleaned names
-        subset_cols = [c for c in final_df.columns if c != 'FISCAL_YEAR']
-        is_duplicated = final_df.assign(ITEM_DESCRIPTION=cleaned_item_desc).duplicated(
-            subset=subset_cols,
-            keep=False  # marks all duplicates in the group as True
-        )
-
-        # 3. Apply cleaned text to non-duplicates; preserve original text for duplicates
+        # Apply cleaned text to non-OBLIGED
         final_df.loc[:, 'ITEM_DESCRIPTION'] = cleaned_item_desc.mask(
-            is_duplicated,
+            final_df['OBLIGED?'] == True,
             final_df['ITEM_DESCRIPTION']
         )
 
