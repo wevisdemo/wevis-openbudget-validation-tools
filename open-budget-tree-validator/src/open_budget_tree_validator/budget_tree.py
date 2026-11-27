@@ -191,5 +191,10 @@ class BudgetTree:
             final_df['OBLIGED?'] == True,
             final_df['ITEM_DESCRIPTION']
         )
+        
+        # Clean any amount in item desc
+        final_df['ITEM_DESCRIPTION'] = final_df['ITEM_DESCRIPTION'].apply(
+            lambda text: re.sub(r"((\d{1,3}\,)+\d{3}|\-)\s+บาท", "", text)
+        )
 
         return final_df
